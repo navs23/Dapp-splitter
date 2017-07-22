@@ -1,88 +1,56 @@
-pragma solidity ^0.4.4;
-contract FundSplitter {
+pragma solidity ^0.4.11;
+contract Splitter {
     
   struct Shareholder{
-      address account;
-      uint percentage;
-      
+      //address account;
+      uint percentageAllocation;
+      uint totalPaid;
   }
   uint public _maxNumberOfShareholders=5;
-  
   uint public _maxAllocation=80; // only 80% can be distributed
-   /*
-  function FundSplitter(uint numberOfShareholders)
+  uint public _currentAllocation=0; 
+  uint public _shareholderCount=0;
   
-  {
-      
+  mapping(address=>Shareholder) public shareholders;
+  
+  
+   // Shareholder[] shareholders;
+  
+  function Splitter(uint numberOfShareholders)
+    {
+      if (numberOfShareholders<=0) revert();
       _maxNumberOfShareholders =numberOfShareholders;
   }
-  */
   
-  Shareholder[] shareholders;
-  
-  function AddShareholder(address account,uint percentage)
-  payable
+  function AddShareholder(uint percentageAllocation)
+ // payable
+   public
   CheckShareholderCount
-  CheckTotalPercentage(percentage)
-  public
-  {
-      if (percentage<0 || percentage>80) revert();
-      // add share holder
-      shareholders.push(Shareholder({
-          account:account,percentage:percentage
-      }));
-      
-  }
-  
-  modifier CheckShareholderCount()
+  returns(bool)
+ 
   {
       
-      if (shareholders.length ==_maxNumberOfShareholders) revert();
-      _;
+     if (percentageAllocation<0 || percentageAllocation>80) revert();
       
-  }
-  
-  // get total fund split
-  function GetTotalAllocation()
-  constant
-  public
-  returns(uint)
-  {
-      uint temp=0;
-       for( uint i =0;i < shareholders.length;i++)
-        temp +=shareholders[i].percentage;
-      return temp;
-  }
-  
-  // get share holder count
-  
-  function GetShareholderCount()
-  constant
-  returns(uint)
-  {
       
-      return shareholders.length;
-  }
-  
-  // total percentage should be less than 80 as 20% is reserved in the contract
-    modifier CheckTotalPercentage(uint percentage)
-  {
-      uint temp=GetTotalAllocation();
      
-        
-      if ((temp +percentage) >_maxAllocation) revert();
-      _;
+      if (shareholders[msg.sender].percentageAllocation != 0) revert();
       
+      shareholders[msg.sender].percentageAllocation=percentageAllocation;
+      
+      _shareholderCount++;
+      
+      return true;
   }
   
-  function FundsAvailable()
-  constant
-  returns(uint)
-  {
+  modifier CheckShareholderCount(){
       
-      return this.balance;
+      if (_shareholderCount==_maxNumberOfShareholders) revert();
+       _;
+      
   }
+ 
   
-  
+   
   
 }
