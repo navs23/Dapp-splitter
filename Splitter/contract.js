@@ -28,7 +28,7 @@
         });
 
        
-        _contract = eth.contract(_contractABI, _contractBytecode, { from: accounts[0], gas: 300000 });
+        _contract = eth.contract(_contractABI, _contractBytecode, { from: accounts[0], gas: 3000000000 });
 
             DeployContract(_maxNumberOfShareholders);
         
@@ -55,7 +55,7 @@ _contract.new(maxNumberOfShareholders).then(function(txHash){
                     el('#maxAllocation').innerHTML =  valueStored[0].toString(10);
                   });
                //GetShareholderCount
-                _contractInstance.GetShareholderCount().then(function(valueStored){
+                _contractInstance._shareholderCount().then(function(valueStored){
                     el('#shareholder').innerHTML =  valueStored[0].toString(10);
                   });
               }
@@ -63,6 +63,7 @@ _contract.new(maxNumberOfShareholders).then(function(txHash){
           }, 400);
         })
         .catch(function(error){
+
           el('#response').innerHTML = 'There was an error: ' + String(error);
         });
 }
