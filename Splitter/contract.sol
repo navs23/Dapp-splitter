@@ -1,9 +1,11 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.4;
 contract Splitter {
-    
+
+// contract owner
+address _owner;
   struct Shareholder{
-      //address account;
-      uint percentageAllocation;
+    
+     uint percentageAllocation;
       uint totalPaid;
   }
   uint public _maxNumberOfShareholders=5;
@@ -12,19 +14,20 @@ contract Splitter {
   uint public _shareholderCount=0;
   
   mapping(address=>Shareholder) public shareholders;
+  address[] public shareholderAccounts;
   
-  
-   // Shareholder[] shareholders;
-  
-  function Splitter(uint numberOfShareholders)
+  function Splitter(uint noOfShareholders)
+  payable
     {
-      if (numberOfShareholders<=0) revert();
-      _maxNumberOfShareholders =numberOfShareholders;
+      if (noOfShareholders<=0) revert();
+      _maxNumberOfShareholders =noOfShareholders;
+      _owner=msg.sender;
+      
   }
   
-  function AddShareholder(uint percentageAllocation)
- // payable
+  function AddShareholder(address account,uint percentageAllocation)
    public
+   IsOwner
   CheckShareholderCount
   returns(bool)
  
@@ -32,15 +35,29 @@ contract Splitter {
       
      if (percentageAllocation<0 || percentageAllocation>80) revert();
       
+      if (shareholders[account].percentageAllocation != 0) revert();
       
+      shareholders[account].percentageAllocation=percentageAllocation;
      
-      if (shareholders[msg.sender].percentageAllocation != 0) revert();
-      
-      shareholders[msg.sender].percentageAllocation=percentageAllocation;
-      
+      shareholderAccounts.push(account);
       _shareholderCount++;
       
       return true;
+  }
+  
+  
+  modifier IsOwner()
+  {
+      if (_owner != msg.sender) revert();
+      _;
+  }
+  function Donate()
+  payable
+  returns(bool)
+  {
+      
+      return true;
+      
   }
   
   modifier CheckShareholderCount(){
@@ -50,7 +67,14 @@ contract Splitter {
       
   }
  
+ 
+  function Balance()
+  constant
+  returns(uint)
+  {
+      
+      return this.balance;
+  }
   
-   
-  
+
 }

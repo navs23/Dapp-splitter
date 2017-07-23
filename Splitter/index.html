@@ -1,7 +1,7 @@
 <html>
   <head>
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.2.3/milligram.min.css">
-
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.2.3/milligram.min.css"/>
+ <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"/>
   </head>
   <body class="container" style="padding-top: 3%;">
     <h2><a href="../../index.html">Home</a></h2>
@@ -19,9 +19,15 @@
 <div class="column">Max allocation</div>
 <div class="column"><span id="maxAllocation" style="font-weight:bold;padding:20px"></span></div>
 <div class="column">Shareholder count</div>
-<div class="column"><span id="shareholder" style="font-weight:bold;padding:20px"></span></div>
+<div class="column">
+  <span id="shareholder" style="font-weight:bold;padding:20px"></span>
+  <br/>Shareholders
+  <ol class="sharholder-list"></ol>
+</div>
 <div class="column">Allocated</div>
 <div class="column"><span id="totalAllocated" style="font-weight:bold;padding:20px"></span></div>
+<div class="column">Balance</div>
+<div class="column"><span id="balance" style="font-weight:bold;padding:20px"></span></div>
 </div>
 </div>
     <hr />
@@ -36,6 +42,7 @@
 <div class="column column-40"><input id="percentage" type="text" placeholder="add allocation in %(max is 80%"/></div>
 </div>
 <div class="row"><button id="addShareHolder">Add Shareholder</button></div>
+<div class="row"><button id="donate">Donate</button></div>
 </div>
 <hr/>
 <div clas="container">
@@ -50,16 +57,39 @@
     <label><a href='#' class="acontract">show/hide contract</a></label>
 <div class="contract">
 </div>
+<div id="dgDonate">
+<table>
+  <tr><td>From</td>
+  <td><select id="fromAccount"></select></td></tr>
+ 
+<tr><td>Ether</td>
+  <td><input id="amount" type="number" value="1 ether" />
+  </td>
+</tr> 
+<tr><td colspan="2">
+  <div id="output" style="padding: 20px; border: 1 solid #9b4dca; word-wrap: break-word"></div>
+  </td>
+</tr> 
+</table>
+
+ 
+</div>
 <script type="text/javascript" src="../../ethereumjs-testrpc.js"></script>
 <script type="text/javascript" src="../../ethjs.js"></script>
 <script type="text/javascript" src="helper.js"></script>
 <script type="text/javascript" src="..//node_modules/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="..//node_modules/jquery/dist/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script type="text/javascript" src="contract.js"></script>
 <script type="text/javascript">
+
 $(document).ready(function(){
 
         $('.contract').hide();
         $('.acontract').on('click',function(){
+
+
           $('.contract').toggle(100);
         });
 
@@ -76,6 +106,50 @@ $(document).ready(function(){
         el('#abi').value = JSON.stringify(helper.getContractAbi());
 
         // wire events
+
+          $('#donate').on('click',function(){
+
+            PopulateDonarAccountList();
+
+            $( "#dgDonate" ).dialog({
+                            resizable: false,
+                            height: "auto",
+                            width: 400,
+                            modal: true,
+                            buttons: {
+                              "Pay": function() {
+
+                                    var txnObject = {
+                                      from: el('#fromAccount').value,
+                                      value: Eth.toWei(el('#amount').value, 'ether'),
+                                    };
+
+                                    el('#response').innerHTML = 'Placing bid..';
+
+                                    _contractInstance.Donate(txnObject, function(error, result){
+                                      if (error) {
+                                        el('#response').innerHTML = 'Hmm, there was an error' + String(error);
+                                      } else {
+                                        el('#output').innerHTML = 'Donoted with tx hash: ' + String(result);
+                                        
+                                           _contractInstance.Balance().then(function(valueStored){
+                                                     el('#balance').innerHTML =  Eth.fromWei(valueStored[0].toString(10), 'ether');
+                  });
+
+                                      }
+                                    });
+                                    
+                                //$( this ).dialog( "close" );
+                              },
+                              "Close": function() {
+                                $( this ).dialog( "close" );
+                              }
+                            }
+   
+                      });
+
+          });
+
         el('#addShareHolder').addEventListener('click', function(){
 
           el('#response').innerHTML = el('#accounts').value + ',' + el('#percentage').value;
@@ -84,13 +158,41 @@ $(document).ready(function(){
             .then(function(setTxHash){
 
               el('#response').innerHTML = 'Ok<br/>Transaction hash is: ' + String(setTxHash);
-                  _contractInstance.GetShareholderCount().then(function(valueStored){
-              el('#shareholder').innerHTML =  valueStored[0].toString(10);
+
+                  _contractInstance._shareholderCount().then(function(valueStored){
+                          var ctr=valueStored[0].toString(10);
+                          el('#shareholder').innerHTML =  ctr;
+                           $('.sharholder-list').empty();
+
+                  for(var i =0;i<ctr;i++)
+                  {
+                        _contractInstance.shareholderAccounts(i).then(function(element){
+
+                        _shareholderAccounts.push(element[0].toString(10));
+                          $('.sharholder-list').append('<li>' + element[0].toString(10) + '</li>');
+                          
+
+                        }).catch(function(err){
+                            el('#response').innerHTML ='error:' + err;
+                          });
+                  }
+
+                  // populate donate account list, exclude shareholder accounts
+                  
             });
+
+                  _contractInstance.Balance().then(function(valueStored){
+                          el('#balance').innerHTML =  valueStored[0].toString(10);
+
+                       
+            });
+
             })
           .catch(function(err){
              el('#response').innerHTML =err;
           });
+
+         
         });
 
 });
